@@ -11,7 +11,8 @@ A simple example of a SWI-Prolog server and a Javascript client.
 This code is an overly simple example of client-server code, intended
 as a tutorial or to extend the HTTP support
 [documentation](https://www.swi-prolog.org/pldoc/doc_for?object=section(%27packages/http.html%27))
-in the SWI-Prolog manual.
+in the SWI-Prolog manual and the tutorial at
+[http://www.pathwayslms.com/swipltuts/html](http://www.pathwayslms.com/swipltuts/html/index.html).
 
 It has only been tested with a recent "development" release of SWI-Prolog
 (8.3.7) on Ubuntu 18.0.4 and with the Chrome browser.
