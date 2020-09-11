@@ -1,108 +1,53 @@
 #!/usr/bin/env swipl
 % -*- mode: Prolog -*-
 
-%% Start this with:
-%%   swipl simple_server.pl --port 9999 --staticdir static
+% Start this with:
+%   swipl simple_server.pl --port 9999 --staticdir static
 
-%% Access this from a browser with
-%%   http://localhost:9999
-%%     which does a redirect to:
-%%   http://localhost:9999/static/simple_client.html
-
-%% See also:
-%%    http://www.pathwayslms.com/swipltuts/html/index.html
-%%    https://swi-prolog.discourse.group/t/yet-another-web-applications-tutorial/566
-%%    https://www.swi-prolog.org/howto/http/
-
-:- module(simple_server, [simple_server_main/0, simple_server_main2/0]).
-
-:- use_module(library(http/http_server), [http_server/1,
-                                          http_read_json_dict/3,
-                                          reply_json_dict/2,
-                                          http_redirect/3
-                                          ]).
-:- use_module(library(http/http_path), [http_absolute_location/3]).
-:- use_module(library(http/http_files), [http_reply_from_files/3]).
-% TODO: if using daemon, then: swipl simple_server.pl --port=.... --pidfile=/var/run/simple_server.pid
+% TODO: if using daemon:
+%         swipl simple_server.pl --port=.... --pidfile=/var/run/simple_server.pid
 %       and kill $(cat /var/run/simple_server.pid)
+
 % TODO: Support HTTPS: https://www.swi-prolog.org/pldoc/man?section=ssl-https-server
+
+% See README.md for an overview of how the code works.
+
+% Access this from a browser with
+%   http://localhost:9999
+%     which does a redirect to:
+%   http://localhost:9999/static/simple_client.html
+
+% See also:
+%    http://www.pathwayslms.com/swipltuts/html/index.html
+%    https://swi-prolog.discourse.group/t/yet-another-web-applications-tutorial/566
+%    https://www.swi-prolog.org/howto/http/
+
+:- module(simple_server, [simple_server_main/0, simple_server_impl/0]).
+
+:- use_module(library(http/http_server), [http_server/1, http_redirect/3,
+                                          http_read_json_dict/3, reply_json_dict/2]).
+:- use_module(library(http/http_path),   [http_absolute_location/3]).
+:- use_module(library(http/http_files),  [http_reply_from_files/3]).
 
 :- use_module(library(debug)).
 :- use_module(library(optparse), [opt_arguments/3]).
 
-%% The most useful debug flags:
+% The most useful debug flags are here. A complete set of debug
+% flags can be found by
+%   find /usr/lib/swi-prolog/library/http/ -type f  | xargs -0 fgrep -nH 'debug('
 :- debug(log).    % enable log messages with debug(log, '...', [...]).
+:- debug(http(request)).
+:- debug(http(error)).
 % :- debug(redirect_log).
 % :- debug(request_json_log).
 % :- debug(http(post_request))
-:- debug(http(request)).
 % :- debug(http_session).
-:- debug(http(error)).
 % :- debug(http_path).
 % :- debug(http(header)).
 % :- debug(http(hook)).
 
-% The following is a list of all other debug flags: you can uncomment
-% some of them for more detailed debug logging.
-% (The list was found by grep-ing /usr/lib/swi-prolog/library/http/)
-% :- debug(calc).
-% :- debug(cookie).
-% :- debug(daemon).
-% :- debug(daemon(socket)).
-% :- debug(false).
-% :- debug(html(mailman)).
-% :- debug(html(script)).
-% :- debug(http_authenticate).
-% :- debug(http(authenticate)).
-% :- debug(http(cgi)).
-% :- debug(http(connection)).
-% :- debug(http(cookie)).
-% :- debug(http(error)).
-% :- debug(http(header)).
-% :- debug(http(hook)).
-% :- debug(http(keep_alive)).
-% :- debug(http(nonce)).
-% :- debug(http(open)).
-% :- debug(http_path).
-% :- debug(http(proxy)).
-% :- debug(http(redirect)).
-% :- debug(http(request)).
-% :- debug(http(scheduler)).
-% :- debug(http(send_request)).
-% :- debug(http(server)).
-% :- debug(http_session).
-% :- debug(http_session(gc)).
-% :- debug(http(spawn)).
-% :- debug(http(transfer_encoding)).
-% :- debug(http(worker)).
-% :- debug(hub(broadcast)).
-% :- debug(hub(event)).
-% :- debug(hub(gate)).
-% :- debug(hub(ready)).
-% :- debug(hub(wait)).
-% :- debug(json_arg).
-% :- debug(logrotate).
-% :- debug(multipart(bom)).
-% :- debug(multipart(content)).
-% :- debug(obsolete).
-% :- debug(openid(associate)).
-% :- debug(openid(authenticate)).
-% :- debug(openid(ax)).
-% :- debug(openid(check_authentication)).
-% :- debug(openid(crypt)).
-% :- debug(openid(resolve)).
-% :- debug(openid(test)).
-% :- debug(openid(verify)).
-% :- debug(openid(yadis)).
-% :- debug(post).
-% :- debug(post_request).
-% :- debug(proxy).
-% :- debug(sgml_plugin).
-% :- debug(websocket).
-% :- debug(websocket(close)).
-% :- debug(websocket(open)).
 
-%% Start with simple_server_main.
+% Start with simple_server_main.
 :- initialization(simple_server_main, main).
 
 :- multifile http:location/3.
@@ -122,9 +67,8 @@
 %! http:location(+Alias, -Expansion, -Options) is nondet.
 % See https://www.swi-prolog.org/pldoc/doc_for?object=http%3Alocation/3
 % This is called by http_absolute_location(+Spec, -Path, +Options), e.g.:
-% http_absolute_location(static('simple_client.js'), Path, [])
-% gives Path='/static/simple_client.js' and
-% http_absolute_location(json(.)), Path, []) gives Path='/.json/'.
+% http_absolute_location(static('simple_client.js'), Path, []), Path='/static/simple_client.js'.
+% http_absolute_location(json(.), Path, []), Path='/json/'.
 http:location(static, root(static), []).
 http:location(json, root(json), []).
 
@@ -134,13 +78,13 @@ http:location(json, root(json), []).
 %       which means not starting the REPL.
 % See also library(main):main/0
 simple_server_main :-
-    simple_server_main2,
+    simple_server_impl,
     debug(log, 'Starting REPL ...', []),
     prolog.  % REPL - terminated with exit.
 
-%! simple_server_main2/0 is det.
+%! simple_server_impl/0 is det.
 % Process the options, start the http server.
-simple_server_main2 :-
+simple_server_impl :-
     server_opts(Opts),
     % set_prolog_flag(verbose_file_search, true), % for debugging
     assert_server_locations(Opts),
@@ -162,11 +106,10 @@ server_opts(Opts) :-
                             'SWI-Prolog version is too old')))
     ),
     OptsSpec =
-    [[opt(port), type(integer), default(9999), longflags([port]),
-      help('Server port')],
-     [opt(staticdir), type(atom), default('static'), longflags([staticdir]),
-      help('Directory for the static files (for "static" URL)')]
-    ],
+        [[opt(port), type(integer), default(9999), longflags([port]),
+          help('Server port')],
+         [opt(staticdir), type(atom), default('static'), longflags([staticdir]),
+          help('Directory for the static files (for "static" URL)')]],
     opt_arguments(OptsSpec, Opts0, PositionalArgs),
     dict_create(Opts, opts, Opts0),
     (   PositionalArgs == []
@@ -178,18 +121,20 @@ server_opts(Opts) :-
 
 %! assert_server_locations(+Opts:dict) is det.
 % Assert user:file_search_path/2 facts for the static files that can
-% then be accessed by static(FileName). This is asserted dynamically
-% because the value is taken from the command line.
+% then be accessed (using absolute_file_name/3) by
+% static(FileName). This is asserted dynamically because the value is
+% taken from the command line.
 assert_server_locations(Opts) :-
     debug(log, 'static dir: ~q', [Opts.staticdir]),
     asserta(user:file_search_path(static_dir, Opts.staticdir)).
 
-% localhost:9999/ ... redirects to /static/simple_client.html
+% http://localhost:9999/ ... redirects to /static/simple_client.html
 %      - for debugging, 'moved' can be cleared by chrome://settings/clearBrowserData
 %        (Cached images and files)
+% You might want to also specify root('index.html').
 :- http_handler(root(.),
                 http_handler_redirect(
-                    moved_temporary, % or 'moved',which can make debugging a bit more difficult
+                    moved, % or 'moved_temporary', for easier debugging
                     static('simple_client.html')),
                 []).
 
@@ -204,8 +149,10 @@ assert_server_locations(Opts) :-
                 reply_with_json, [priority(0)]).
 
 %! http_handler_redirect(+How:atom, +To, +Request) is det.
-% Called by http_handler for a redirect. How is moved_temporary or
-% moved, To is a file path, Request is the incoming HTTP request.
+% Called by http_handler for a redirect.
+%    How is moved_temporary or moved
+%    To is a file path
+%    Request is the incoming HTTP request
 http_handler_redirect(How, To, Request) :-
     memberchk(path(Base), Request),
     memberchk(request_uri(RequestURI), Request),
@@ -218,6 +165,7 @@ http_handler_redirect(How, To, Request) :-
 
 %! reply_with_json(+Request) is det.
 % HTTP handler for "/json" request.
+% This gets handed off to json_response/2.
 reply_with_json(Request) :-
     (   memberchk(method(post), Request)
     ->  true

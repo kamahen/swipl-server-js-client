@@ -62,6 +62,15 @@ for `root(.)` does a redirect to `static('simple_client.html')`, which
 causes the browser to fetch that HTML (using the server). All other
 static files are accessed by the same mechanism.
 
+*  The HTML path `static('simple_client.html')` is resolved
+   using `http:location/2` facts - see the comments there.
+
+*  `static_dir('simple_client.html')` is resolved using
+   [file_search_path/2](https://www.swi-prolog.org/pldoc/man?predicate=file_search_path/2).
+   During server start-up, `assert_server_locations/1` is called
+   to asserta a file_search_path fact to redirect `static(Path)` to
+   the directory specified by the option `--staticdir`).
+
 The `simple_client.html` file has this line in its `<head>`:
 
     <script src="simple_client.js" defer="def"></script>
