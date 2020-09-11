@@ -73,7 +73,7 @@ static files are accessed by the same mechanism.
 
 The `simple_client.html` file has this line in its `<head>`:
 
-    <script src="simple_client.js" defer="def"></script>
+    <script src="simple_client.js" defer="defer"></script>
 
 which contains a function `renderPage()`, which is invoked by:
 
