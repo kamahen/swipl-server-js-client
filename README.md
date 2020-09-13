@@ -21,7 +21,11 @@ words, don't run this server anywhere that someone from the "outside"
 can access it.)
 
 The code has only been tested with a recent "development" release of
-SWI-Prolog (8.3.7) on Ubuntu 18.0.4 and with the Chrome browser.
+SWI-Prolog (8.3.7) on Ubuntu 18.0.4 and with the Chrome browser. The
+server has been
+[reported](https://swi-prolog.discourse.group/t/simple-prolog-server-with-javascript-client/2898/2)
+to run under Windows 10 from the DOS prompt, with the client on
+Microsoft Edge browser.
 
 ## How to run
 
