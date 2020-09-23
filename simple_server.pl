@@ -77,6 +77,14 @@ http:location(json, root(json), []).
 % TODO: start the server as a daemon (see library(http/http_unix_daemon)),
 %       which means not starting the REPL.
 % See also library(main):main/0
+%
+% Note: If you run simple_server_impl/0, it exits immediately.
+% Instead of running prolog/0, you can do something like
+% thread_get_message(x), which will wait forever, or you can do
+% thread_join('http@9999', _Status) -- this convention is not
+% documented but can be found by using
+% thread_httpd:current_server(Port, _Goal, Thread, _Queue, _Scheme, _StartTime).
+% See also: https://www.swi-prolog.org/pldoc/man?section=httpunixdaemon
 simple_server_main :-
     simple_server_impl,
     debug(log, 'Starting REPL ...', []),
@@ -88,11 +96,11 @@ simple_server_impl :-
     server_opts(Opts),
     % set_prolog_flag(verbose_file_search, true), % for debugging
     assert_server_locations(Opts),
-    http_server([port(Opts.port),
+    http_server([port(Opts.port)
                  % TODO: enable ssl (https):
                  % ssl([certificate_file('cacert.pem'), % or cert.csr?
                  %      key_file('privkey.pem')]),
-                 workers(5)]).
+                ]).
 
 %! server_opts(-Opts:dict) is det.
 % Process the command-line options into a dict.
