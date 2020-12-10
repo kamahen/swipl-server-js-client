@@ -1,43 +1,47 @@
+'use strict';
+
 // Simple client for running a query on the server and displaying the result
 
 // Called by <body onload="renderPage();">
-function renderPage() {
+async function renderPage() {
     document.getElementById('query_form').addEventListener('submit', handleSubmit);
     document.getElementById('result').style.display = 'none';
 }
 
 // Handler for form's "Send query" button
-function handleSubmit(event) {
+async function handleSubmit(event) {
     event.preventDefault();
 
     let text = document.getElementById('query');
-    fetchFromServer({query: text.value},
-                    query_result => displayQueryResult(query_result));
+    await fetchFromServer({query: text.value},
+                          query_result => displayQueryResult(query_result));
 }
 
 // Send a request to the server and schedule a callback.
-function fetchFromServer(request, callback) {
-    // callback should take a single arg, the response from the server,
-    fetch('/json',
-          {method: 'POST',
-           headers: {'Content-Type': 'application/json'},
-           body: JSON.stringify(request),
-           mode: 'cors',                  // Don't need?
-           cache: 'no-cache',             // Don't need?
-           credentials: 'same-origin',    // Don't need?
-           redirect: 'follow',            // Don't need?
-           referrerPolicy: 'no-referrer', // Don't need?
-          })
-        .then(response => response.json())
-        .then(callback)
+async function fetchFromServer(request, callback) {
+    // callback should take a single arg, the response from the server.
+    try {
+        const response = await fetch(
+            '/json',
+            {method: 'POST',
+             headers: {'Content-Type': 'application/json'},
+             body: JSON.stringify(request),
+             mode: 'cors',                  // Don't need?
+             cache: 'no-cache',             // Don't need?
+             credentials: 'same-origin',    // Don't need?
+             redirect: 'follow',            // Don't need?
+             referrerPolicy: 'no-referrer', // Don't need?
+            });
+        callback(await response.json());
+    } catch(err) {
         // TODO: the following doesn't capture enough information;
         //       there is interesting information in the console log
         //       such as error code 500 or ERR_CONNECTION_REFUSED
-        .catch(err => {
-            alert('***fetch ' + JSON.stringify(request) + ': ' + err) });
+        alert('***fetch ' + JSON.stringify(request) + ': ' + err);
+    }
 }
 
-// Callback from fetchFromServer fro handleSubmit
+// Callback from fetchFromServer for handleSubmit
 function displayQueryResult(query_result) {
     document.getElementById('result').style.display = 'block';
     document.getElementById('result:query').innerHTML = '<code>' + sanitizeText(query_result.query) + '</code>';
