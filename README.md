@@ -4,7 +4,7 @@ A simple example of a SWI-Prolog server and a Javascript client.
 
 
 ## License
-[Apache 2.0](LICENSE)
+[Simplified BSD](LICENSE)
 
 ## Warning
 
