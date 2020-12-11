@@ -2,6 +2,7 @@
 
 A simple example of a SWI-Prolog server and a Javascript client.
 
+See also: https://www.swi-prolog.org/howto/http/
 
 ## License
 [Simplified BSD](LICENSE)
