@@ -85,6 +85,11 @@ which contains a function `renderPage()`, which is invoked by:
 
     <body onload="renderPage();">
 
+(The `simple_client.js` code is fetched from the server, using the
+`http_handler/3` for `static(.)`, which in turn uses
+`http_reply_from_files/2` (in `library(http/http_files)` to do the
+work.)
+
 The JavaScript code in the client communicates with the server using
 the `fetchFromServer` function, which sends a stringified JSON data
 structure containing the request and sets a callback for processing
@@ -97,7 +102,4 @@ On the server, the `http_handler` for `root(json)` (`/json`) calls
 
 ## Miscellaneous
 
-The `favico.ico` is taken from [http://swi-prolog](http://swi-prolog).
-
-
-
+The `favico.ico` is taken from [http://swi-prolog](http://swi-prolog.com).
