@@ -102,4 +102,4 @@ On the server, the `http_handler` for `root(json)` (`/json`) calls
 
 ## Miscellaneous
 
-The `favico.ico` is taken from [http://swi-prolog](http://swi-prolog.com).
+The `favico.ico` is taken from [http://swi-prolog.com](http://swi-prolog.com).
