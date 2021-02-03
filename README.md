@@ -66,6 +66,12 @@ or this:
 
     setof(K:V,current_prolog_flag(K,V), Flags), forall(member(K:V, Flags), format('~|~q:~t~40+~q~n', [K,V]))
 
+To stop the server, enter the line
+```
+halt.
+```
+or ctrl-D (possibly ctrl-Z on Windows).
+
 ## Code overview
 
 There are three client components and one server component:

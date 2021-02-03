@@ -58,7 +58,7 @@ function displayQueryResult(query_result) {
             row.vAlign = 'top';
             var td1 = row.insertCell();
             td1.setAttribute('class', 'vars_table');
-            td1.innerHTML = '<b><code>' + sanitizeText(one_var['var']) + '</code></b>';
+            td1.innerHTML = '<b><code>' + sanitizeText(one_var.var) + '</code></b>';
             var td2 = row.insertCell();
             td2.setAttribute('class', 'vars_table');
             td2.innerHTML = '<code>' + sanitizeText(one_var.value) + '</code>';
