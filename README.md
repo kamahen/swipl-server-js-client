@@ -7,6 +7,19 @@ See also: https://www.swi-prolog.org/howto/http/
 ## License
 [Simplified BSD](LICENSE)
 
+## Javascript/ECMAScript
+
+“We are tied down to a language which makes up in obscurity what it lacks in style.”
+<br/>— Tom Stoppard, _Rosencrantz and Guildenstern are Dead_
+
+1995 — Brendan Eich reads up on every mistake ever made in designing a
+programming language, invents a few more, and creates
+LiveScript. Later, in an effort to cash in on the popularity of Java
+the language is renamed JavaScript. Later still, in an effort to cash
+in on the popularity of skin diseases the language is renamed
+ECMAScript.
+<br/>— [A Brief, Incomplete, and Mostly Wrong History of Programming Languages](http://james-iry.blogspot.com/2009/05/brief-incomplete-and-mostly-wrong.html)
+
 ## Warning
 
 This code is an overly simple example of client-server code, intended
