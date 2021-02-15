@@ -83,12 +83,13 @@ function sanitizeText(raw_str) {
     // There shouldn't be a need for .replace(/ /g, '&nbsp;') if CSS
     // has white-space:pre ... but by experiment, it's needed.
     // TODO: remove the '<br/>' insertion and put it into extract_color.pl.
-    return (raw_str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;')
-        .replace(/\n/g, '<br/>')  // TODO: remove - not needed?
-        .replace(/\s/g, '&nbsp;');  // TODO: add test for tabs in source
+    return raw_str ? (raw_str
+                      .replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&apos;')
+                      .replace(/\n/g, '<br/>')  // TODO: remove - not needed?
+                      .replace(/\s/g, '&nbsp;'))  // TODO: add test for tabs in source
+        : raw_str;
 }

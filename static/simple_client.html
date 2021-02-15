@@ -2,46 +2,41 @@
 <html>
   <head lang="en">
     <!-- disable cache for debugging -->
-    <meta http-equiv='cache-control' content='no-cache'>
-    <meta http-equiv='expires' content='0'>
-    <meta http-equiv='pragma' content='no-cache'>
+    <meta http-equiv="cache-control" content="no-cache"/>
+    <meta http-equiv="expires" content="0"/>
+    <meta http-equiv="pragma" content="no-cache"/>
     <!-- end: disable cache for debugging -->
-    <meta Access-Control-Allow-Origin/>
-    <meta charset="utf-8" />
+    <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
     <link rel="shortcut icon" type="image/x-icon" href="favicon.ico"/>  <!-- relative to 'static' dir -->
     <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
-    <!-- <link href="https://fonts.googleapis.com/css?family=Roboto Mono" rel="stylesheet"> -->
-    <!-- <link href="https://fonts.googleapis.com/css?family=Source Code Pro" rel="stylesheet"> -->
+    <!-- link href="https://fonts.googleapis.com/css?family=Roboto Mono" rel="stylesheet" -->
+    <!-- link href="https://fonts.googleapis.com/css?family=Source Code Pro" rel="stylesheet" -->
     <link rel="stylesheet" href="simple_client.css"/>
-    <! -- TODO: remove jquery (only used for debugging) -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <!-- TODO: remove jquery (only used for debugging) -->
+    <!-- script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script -->
     <script src="simple_client.js" defer="defer"></script>
 
     <title>Simple client</title>
+  </head>
 
-    <body onload="renderPage();">
-      <form id="query_form">
-        <label for="query">Query:</label><br/>
-        <input type="text" id="query" size=100/><br/>
-        <input type="submit" value="Send query"/>
-      </form>
-      <div id="result">
-        <p>
-          <table>
-            <tr valign="top"><td><b>Query:</b></td>
-              <td id="result:query">&nbsp;</td></tr>
-            <tr valign="top"><td><b>(after)</b></td>
-              <td id="result:query_after_call">&nbsp;<td></tr>
-            <tr valign="top"><td><b>Success:</b></td>
-              <td id="result:success">&nbsp;</td></tr>
-            <tr valign="top"><td><b>Error:</b></td>
-              <td id="result:error">&nbsp;</td></tr>
-            <tr valign="top"><td><b>Vars:</b></td>
-              <td id="result:vars">&nbsp;</td></tr>
-            <tr valign="top"><td><b>Printed:</b></td>
-              <td id="result:printed_output">&nbsp;</td></tr>
-          </table>
-      </div>
-    </body>
+  <body onload="renderPage();">
+    <noscript><h1>You need to enable JavaScript to run this app!!!</h1></noscript>
+    <form id="query_form">
+      <label>Query:</label><br/>
+      <input type="text" id="query" size="100"/><br/>
+      <input type="submit" value="Send query"/>
+    </form>
+    <div id="result">
+      <p>
+        <table>
+          <tr valign="top"><td><b>Query:</b></td>   <td id="result:query">&nbsp;</td></tr>
+          <tr valign="top"><td><b>(after)</b></td>  <td id="result:query_after_call">&nbsp;</td></tr>
+          <tr valign="top"><td><b>Success:</b></td> <td id="result:success">&nbsp;</td></tr>
+          <tr valign="top"><td><b>Error:</b></td>   <td id="result:error">&nbsp;</td></tr>
+          <tr valign="top"><td><b>Vars:</b></td>    <td id="result:vars">&nbsp;</td></tr>
+          <tr valign="top"><td><b>Printed:</b></td> <td id="result:printed_output">&nbsp;</td></tr>
+        </table>
+    </div>
+  </body>
 </html>
