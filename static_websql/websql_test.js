@@ -122,6 +122,7 @@ class Tickers {
                 [row.id, row.ticker, row.name]);
             mykabu_db.journal.add(
                 {action: 'insert_or_replace',
+                 table: 'tickers',
                  data: {id: row.id,
                         ticker: row.ticker,
                         name: row.name}});
@@ -131,6 +132,7 @@ class Tickers {
                 [row.ticker, row.name]);
             mykabu_db.journal.add(
                 {action: 'insert_or_replace',
+                 table: 'tickers',
                  data: {ticker: row.ticker,
                         name: row.name}});
         }
@@ -238,6 +240,7 @@ function validateBuyData() {
              buy_data.broker])
         mykabu_db.journal.add(
             {action: 'insert_or_replace',
+             table: 'buy_lots',
              data: buy_data});
     } else {
         alert('Invalid ticker: ' + document.getElementById('buy.ticker').value);
