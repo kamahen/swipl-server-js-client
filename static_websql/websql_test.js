@@ -37,10 +37,10 @@ class MyKabuDB {
         this.buy_lots = new BuyLots();
     }
 
-    // Create and run a transaction with fn(tx) where tx is the transaction
-    transaction(fn) {
-        this.db.transaction(fn,
-                            (err) => this.tx_error_cb(cmd, err));
+    // Create and run a transaction with fn(tx) where tx is the
+    // transaction and with a standard error handler
+    transaction_with_err(fn) {
+        this.db.transaction(fn, (err) => tx_error_cb(err));
     }
 
     // Convenience method: run a single cmd and add a journal entry,
@@ -52,7 +52,7 @@ class MyKabuDB {
         // interface SQLVoidCallback { void handleEvent(); }
         // interface SQLTransactionCallback { void handleEvent(in SQLTransaction transaction); }
         // interface SQLTransactionErrorCallback { void handleEvent(in SQLError error); }
-        this.transaction(
+        this.transaction_with_err(
             (tx) => {
                 tx.executeSql(cmd, subs || []);
                 if (journal_entry) {
@@ -65,14 +65,15 @@ class MyKabuDB {
     readTransaction_executeSql(cmd, subs, read_cb) {
         this.db.readTransaction(
             (tx) => tx.executeSql(cmd, subs || [], read_cb),
-            (err) => this.tx_error_cb(cmd, err));
+            (err) => tx_error_cb(err));
     }
+}
 
-    tx_error_cb(cmd, err) {
-        // err is of type SQLError: {code, message}
-        console.log('WebSQL err:', cmd, err);
-        alert('WebSQL err: ' + err.message);
-    }
+// SQL transaction error handler (used by MyKabuDB.transaction_with_err)
+function tx_error_cb(err) {
+    // err is of type SQLError: {code, message}
+    console.log('WebSQL err:', err);
+    alert('WebSQL err: ' + err.message);
 }
 
 
@@ -87,8 +88,7 @@ class Journal {
 
     create_table() {
         if (drop_tables) {
-            mykabu_db.transaction_executeSql(
-                'DROP TABLE IF EXISTS journal');
+            mykabu_db.transaction_executeSql('DROP TABLE IF EXISTS journal');
         }
         mykabu_db.transaction_executeSql(
             'CREATE TABLE IF NOT EXISTS journal (' +
@@ -103,10 +103,6 @@ class Journal {
             "INSERT INTO journal(timestamp, entry) VALUES(DATETIME('NOW'),?)",
             [JSON.stringify(entry)]);
     }
-
-    add(entry) {
-        mykabu_db.transaction((tx) => this.add_tx(tx, entry));
-    }
 }
 
 // Encapsulate the database table for tickers
@@ -117,8 +113,7 @@ class Tickers {
 
     create_table() {
         if (drop_tables) {
-            mykabu_db.transaction_executeSql(
-                'DROP TABLE IF EXISTS tickers');
+            mykabu_db.transaction_executeSql('DROP TABLE IF EXISTS tickers');
         }
         mykabu_db.transaction_executeSql(
             'CREATE TABLE IF NOT EXISTS tickers (' +
@@ -139,7 +134,7 @@ class Tickers {
             mykabu_db.transaction_executeSql(
                 'INSERT OR REPLACE INTO tickers(id, ticker, name) VALUES(?,?, ?)',
                 [row.id, row.ticker, row.name],
-                {action: 'insert_or_replace',
+                {action: 'insert/replace',
                  table: 'tickers',
                  data: {id: row.id,
                         ticker: row.ticker,
@@ -148,7 +143,7 @@ class Tickers {
             mykabu_db.transaction_executeSql(
                     'INSERT OR REPLACE INTO tickers(ticker, name) VALUES(?,?)',
                 [row.ticker, row.name],
-                {action: 'insert_or_replace',
+                {action: 'insert/replace',
                  table: 'tickers',
                  data: {ticker: row.ticker,
                         name: row.name}});
@@ -183,20 +178,18 @@ class BuyLots {
 
     create_table() {
         if (drop_tables) {
-            mykabu_db.transaction_executeSql(
-                'DROP TABLE IF EXISTS buy_lots');
+            mykabu_db.transaction_executeSql('DROP TABLE IF EXISTS buy_lots');
         }
         mykabu_db.transaction_executeSql(
             'CREATE TABLE IF NOT EXISTS buy_lots (' +
                 'id              INTEGER PRIMARY KEY ASC AUTOINCREMENT, ' +
-                'ticker_id       INTEGER, ' + // tickers.id
+                'ticker_id       INTEGER REFERENCES tickers(id), ' +
                 'timestamp       DATETIME, ' +
                 'shares          DECIMAL(16,4), ' +
                 'price_per_share DECIMAL(16,4), ' +
                 'notes           TEXT, ' +
-                'broker          VARYING CHARCTER(40)' +
-                ')',
-            [], null);
+                'broker          VARYING CHARCTER(40)' + // TODO: make into a table, like tickers
+                ')');
     }
 }
 
@@ -213,39 +206,51 @@ async function renderPage() {
 // Handler for buy form's "submit" button
 async function handleBuySubmit(event) {
     event.preventDefault();
-    const buy_data = validateBuyData();
-    if (buy_data) {
-        mykabu_db.readTransaction_executeSql(
-            'SELECT id FROM tickers WHERE ticker=?',
-            [document.getElementById('buy.ticker').value.trim().toUpperCase()],
-            (t, data) => handleBuySubmitTicker(data, buy_data));
-    }
+    mykabu_db.transaction_with_err(
+        (tx) => handleBuySubmitTx(tx, getFormBuyData()));
 }
 
-function validateBuyData() {
-    let result = {
-        timestamp: document.getElementById('buy.timestamp').value.trim(),
-        shares: document.getElementById('buy.shares').value.trim(),
+function getFormBuyData() {
+    return {
+        ticker:          document.getElementById('buy.ticker').value.trim().toUpperCase(),
+        timestamp:       document.getElementById('buy.timestamp').value.trim(),
+        shares:          document.getElementById('buy.shares').value.trim(),
         price_per_share: document.getElementById('buy.price_per_share').value.trim(),
-        notes: document.getElementById('buy.notes').value.trim(),
-        broker: document.getElementById('buy.broker').value.trim(),
+        notes:           document.getElementById('buy.notes').value.trim(),
+        broker:          document.getElementById('buy.broker').value.trim(),
     };
-    if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(result.timestamp)) {
-        alert('Invalid date: ' + result.timestamp);
-        return null;
-    }
-    if (!/^\d+(\.\d*)?/.test(result.shares)) {  // TODO: parseNumber
-        alert('Invalid # shares: ' + result.shares);
-        return null;
-    }
-    if (!/^\d+(\.\d*)?/.test(result.price_per_share)) {  // TODO: parseNumber
-        alert('Invalid # price_per_share: ' + result.price_per_share);
-        return null;
-    }
-    return result;
 }
 
-    async function handleBuySubmitTicker(tickers_data, buy_data) {
+// Handler for buy form's "submit" button - within database transaction
+function handleBuySubmitTx(tx, buy_data) {
+    // These should have been checked by the form, but it doesn't hurt
+    // to double check.
+    let error = false;
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(buy_data.timestamp)) {
+        alert('Invalid date: ' + buy_data.timestamp);
+        error = true;
+    }
+    if (!/^\d+(\.\d*)?/.test(buy_data.shares)) {  // TODO: parseNumber
+        alert('Invalid # shares: ' + buy_data.shares);
+        error = true;
+    }
+    if (!/^\d+(\.\d*)?/.test(buy_data.price_per_share)) {  // TODO: parseNumber
+        alert('Invalid # price_per_share: ' + buy_data.price_per_share);
+        error = true;
+    }
+    if (error) {
+        // no need: show_buy_lots();
+        return;
+    }
+
+    // Validate the ticker name by lookup and continue to next step
+    tx.executeSql(
+        'SELECT id FROM tickers WHERE ticker=?',
+        [buy_data.ticker],
+        (tx, data) => handleBuySubmitValidateTickerAndSave(tx, data, buy_data));
+}
+
+function handleBuySubmitValidateTickerAndSave(tx, tickers_data, buy_data) {
     if (tickers_data.rows.length) {
         console.assert(tickers_data.rows.length == 1, 'Wrong # rows', tickers_data);
         mykabu_db.transaction_executeSql(
@@ -257,7 +262,7 @@ function validateBuyData() {
              buy_data.price_per_share,
              buy_data.notes,
              buy_data.broker],
-            {action: 'insert_or_replace',
+            {action: 'insert/replace',
              table: 'buy_lots',
              data: buy_data});
     } else {
@@ -266,7 +271,7 @@ function validateBuyData() {
     show_buy_lots();
 }
 
-// Display the buy_lots contents
+// Display the contents of the buy_lots table
 function show_buy_lots() {
     mykabu_db.readTransaction_executeSql(
         'SELECT buy_lots.id,tickers.ticker,' +
