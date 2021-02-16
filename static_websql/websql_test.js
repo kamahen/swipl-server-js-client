@@ -10,7 +10,10 @@ const drop_tables = false;  // TODO: change this to false for production
 //    tickers:  the Tickers object
 //    buy_lots: the BuyLots object
 // transaction_executSql: simple way of running a single SQL cmd
+// The singleton mykabu_db is after this definition.
 class MyKabuDB {
+    // The constructor opens the database (and creates it if necessary);
+    // you need to create the tables separately.
     constructor() {
         if (window.openDatabase) {
             this.db = openDatabase("mykabu_db",
@@ -34,16 +37,28 @@ class MyKabuDB {
         this.buy_lots = new BuyLots();
     }
 
-    transaction_executeSql(cmd, subs) {
+    // Create and run a transaction with fn(tx) where tx is the transaction
+    transaction(fn) {
+        this.db.transaction(fn,
+                            (err) => this.tx_error_cb(cmd, err));
+    }
+
+    // Convenience method: run a single cmd and add a journal entry,
+    // all within a single translaction
+    transaction_executeSql(cmd, subs, journal_entry) {
         // this.db.transaction(in SQLTransactionCallback callback,
         //                     in optional SQLTransactionErrorCallback errorCallback,
         //                     in optional SQLVoidCallback successCallback)
         // interface SQLVoidCallback { void handleEvent(); }
         // interface SQLTransactionCallback { void handleEvent(in SQLTransaction transaction); }
         // interface SQLTransactionErrorCallback { void handleEvent(in SQLError error); }
-        this.db.transaction(
-            (tx) => tx.executeSql(cmd, subs || []),
-            (err) => this.tx_error_cb(cmd, err))
+        this.transaction(
+            (tx) => {
+                tx.executeSql(cmd, subs || []);
+                if (journal_entry) {
+                    mykabu_db.journal.add_tx(tx, journal_entry);
+                }
+            });
         // if desired, can add a 3rd arg SQLVoidCallback successCallback to transaction
     }
 
@@ -83,10 +98,14 @@ class Journal {
                 ')');
     }
 
-    add(entry) {
-        mykabu_db.transaction_executeSql(
+    add_tx(tx, entry) {
+        tx.executeSql(
             "INSERT INTO journal(timestamp, entry) VALUES(DATETIME('NOW'),?)",
             [JSON.stringify(entry)]);
+    }
+
+    add(entry) {
+        mykabu_db.transaction((tx) => this.add_tx(tx, entry));
     }
 }
 
@@ -119,8 +138,7 @@ class Tickers {
         if (row.id || row.id === 0) { // skip if row.id is null or undefined
             mykabu_db.transaction_executeSql(
                 'INSERT OR REPLACE INTO tickers(id, ticker, name) VALUES(?,?, ?)',
-                [row.id, row.ticker, row.name]);
-            mykabu_db.journal.add(
+                [row.id, row.ticker, row.name],
                 {action: 'insert_or_replace',
                  table: 'tickers',
                  data: {id: row.id,
@@ -129,8 +147,7 @@ class Tickers {
         } else {
             mykabu_db.transaction_executeSql(
                     'INSERT OR REPLACE INTO tickers(ticker, name) VALUES(?,?)',
-                [row.ticker, row.name]);
-            mykabu_db.journal.add(
+                [row.ticker, row.name],
                 {action: 'insert_or_replace',
                  table: 'tickers',
                  data: {ticker: row.ticker,
@@ -185,7 +202,9 @@ class BuyLots {
 
 // Called by <body onload="renderPage();">
 async function renderPage() {
-    console.log('mykabu_db', mykabu_db);
+    // TODO: create_tables within MyKabuDB.constructor()?
+    //       - didn't work when I tried it because of the
+    //         order things happened.
     mykabu_db.create_tables();
     document.getElementById('buy_lot').addEventListener('submit', handleBuySubmit);
     show_buy_lots();
@@ -237,8 +256,7 @@ function validateBuyData() {
              buy_data.shares,
              buy_data.price_per_share,
              buy_data.notes,
-             buy_data.broker])
-        mykabu_db.journal.add(
+             buy_data.broker],
             {action: 'insert_or_replace',
              table: 'buy_lots',
              data: buy_data});
