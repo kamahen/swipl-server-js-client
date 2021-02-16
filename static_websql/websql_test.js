@@ -2,8 +2,6 @@
 
 // Simple client for testing WebSQL
 
-var mykabu_db = undefined;  // gets set to MyKabuDB in renderPage()
-
 const drop_tables = false;  // TODO: change this to false for production
 
 // Encapsulate the database.
@@ -21,17 +19,19 @@ class MyKabuDB {
                                    5 * 1024 * 1024 // size: 5MB
                                    // No creationCallback
                                   );
-            if (this.db) {
-                this.journal = new Journal(this);
-                this.tickers = new Tickers(this);
-                this.buy_lots = new BuyLots(this);
-            } else {
+            if (! this.db) {
                 alert('WebSQL openDatabase error');
             }
         } else {
             alert('WebSQL is not supported by your browser!');
             this.db = undefined;
         }
+    }
+
+    create_tables() {
+        this.journal = new Journal();
+        this.tickers = new Tickers();
+        this.buy_lots = new BuyLots();
     }
 
     transaction_executeSql(cmd, subs) {
@@ -60,19 +60,22 @@ class MyKabuDB {
     }
 }
 
+
+var mykabu_db = new MyKabuDB();
+
+
 // Encapsulate the database table for journalling
 class Journal {
-    constructor(mykabu_db) {
-        this.mykabu_db = mykabu_db;
+    constructor() {
         this.create_table();
     }
 
     create_table() {
         if (drop_tables) {
-            this.mykabu_db.transaction_executeSql(
+            mykabu_db.transaction_executeSql(
                 'DROP TABLE IF EXISTS journal');
         }
-        this.mykabu_db.transaction_executeSql(
+        mykabu_db.transaction_executeSql(
             'CREATE TABLE IF NOT EXISTS journal (' +
                 'id        INTEGER PRIMARY KEY ASC AUTOINCREMENT, ' +
                 'timestamp DATETIME, ' +
@@ -81,7 +84,7 @@ class Journal {
     }
 
     add(entry) {
-        this.mykabu_db.transaction_executeSql(
+        mykabu_db.transaction_executeSql(
             "INSERT INTO journal(timestamp, entry) VALUES(DATETIME('NOW'),?)",
             [JSON.stringify(entry)]);
     }
@@ -89,17 +92,16 @@ class Journal {
 
 // Encapsulate the database table for tickers
 class Tickers {
-    constructor(mykabu_db) {
-        this.mykabu_db = mykabu_db;
+    constructor() {
         this.create_table();
     }
 
     create_table() {
         if (drop_tables) {
-            this.mykabu_db.transaction_executeSql(
+            mykabu_db.transaction_executeSql(
                 'DROP TABLE IF EXISTS tickers');
         }
-        this.mykabu_db.transaction_executeSql(
+        mykabu_db.transaction_executeSql(
             'CREATE TABLE IF NOT EXISTS tickers (' +
                 'id     INTEGER PRIMARY KEY ASC AUTOINCREMENT, ' +
                 'ticker VARYING CHARACTER(40) UNIQUE, ' + // TODO: TEXT ?
@@ -115,19 +117,19 @@ class Tickers {
 
     insert(row) {
         if (row.id || row.id === 0) { // skip if row.id is null or undefined
-            this.mykabu_db.transaction_executeSql(
+            mykabu_db.transaction_executeSql(
                 'INSERT OR REPLACE INTO tickers(id, ticker, name) VALUES(?,?, ?)',
                 [row.id, row.ticker, row.name]);
-            this.mykabu_db.journal.add(
+            mykabu_db.journal.add(
                 {action: 'insert_or_replace',
                  data: {id: row.id,
                         ticker: row.ticker,
                         name: row.name}});
         } else {
-            this.mykabu_db.transaction_executeSql(
+            mykabu_db.transaction_executeSql(
                     'INSERT OR REPLACE INTO tickers(ticker, name) VALUES(?,?)',
                 [row.ticker, row.name]);
-            this.mykabu_db.journal.add(
+            mykabu_db.journal.add(
                 {action: 'insert_or_replace',
                  data: {ticker: row.ticker,
                         name: row.name}});
@@ -135,7 +137,7 @@ class Tickers {
     }
 
     async dump() {
-        this.mykabu_db.readTransaction_executeSql(
+        mykabu_db.readTransaction_executeSql(
             'SELECT id, ticker, name ' +
                 'FROM tickers ORDER BY id',
             [],
@@ -156,17 +158,16 @@ class Tickers {
 
 // Encapsulate the database table for bought lots
 class BuyLots {
-    constructor(mykabu_db) {
-        this.mykabu_db = mykabu_db;
+    constructor() {
         this.create_table();
     }
 
     create_table() {
         if (drop_tables) {
-            this.mykabu_db.transaction_executeSql(
+            mykabu_db.transaction_executeSql(
                 'DROP TABLE IF EXISTS buy_lots');
         }
-        this.mykabu_db.transaction_executeSql(
+        mykabu_db.transaction_executeSql(
             'CREATE TABLE IF NOT EXISTS buy_lots (' +
                 'id              INTEGER PRIMARY KEY ASC AUTOINCREMENT, ' +
                 'ticker_id       INTEGER, ' + // tickers.id
@@ -182,8 +183,8 @@ class BuyLots {
 
 // Called by <body onload="renderPage();">
 async function renderPage() {
-    mykabu_db = new MyKabuDB();
     console.log('mykabu_db', mykabu_db);
+    mykabu_db.create_tables();
     document.getElementById('buy_lot').addEventListener('submit', handleBuySubmit);
     show_buy_lots();
 }
@@ -202,21 +203,21 @@ async function handleBuySubmit(event) {
 
 function validateBuyData() {
     let result = {
-        date: document.getElementById('buy.date').value.trim(),
+        timestamp: document.getElementById('buy.timestamp').value.trim(),
         shares: document.getElementById('buy.shares').value.trim(),
         price_per_share: document.getElementById('buy.price_per_share').value.trim(),
         notes: document.getElementById('buy.notes').value.trim(),
         broker: document.getElementById('buy.broker').value.trim(),
     };
-    if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(result.date)) {
-        alert('Invalid date: ' + result.date);
+    if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(result.timestamp)) {
+        alert('Invalid date: ' + result.timestamp);
         return null;
     }
-    if (!/^\d+(\.\d*)?/.test(result.shares)) {
+    if (!/^\d+(\.\d*)?/.test(result.shares)) {  // TODO: parseNumber
         alert('Invalid # shares: ' + result.shares);
         return null;
     }
-    if (!/^\d+(\.\d*)?/.test(result.price_per_share)) {
+    if (!/^\d+(\.\d*)?/.test(result.price_per_share)) {  // TODO: parseNumber
         alert('Invalid # price_per_share: ' + result.price_per_share);
         return null;
     }
@@ -230,12 +231,12 @@ function validateBuyData() {
             'INSERT INTO buy_lots(ticker_id,timestamp,shares,price_per_share,notes,broker) ' +
                 'VALUES(?,?,?,?,?,?)',
             [tickers_data.rows[0].id,
-             buy_data.data,
+             buy_data.timestamp,
              buy_data.shares,
              buy_data.price_per_share,
              buy_data.notes,
              buy_data.broker])
-        this.mykabu_db.journal.add(
+        mykabu_db.journal.add(
             {action: 'insert_or_replace',
              data: buy_data});
     } else {
@@ -269,9 +270,31 @@ function show_buy_lots_handler(data) {
         }
         for (const data_row of data.rows) {
             var row = table.insertRow();
-            for (const col of Object.values(data_row)) {
+            for (const [name, value] of Object.entries(data_row)) {
                 var c = row.insertCell();
-                c.innerHTML = sanitizeText('' + col);
+                switch (name) {
+                case 'shares':
+                    c.align = 'right'; // TODO: deprecated
+                    c.innerHTML = new Intl.NumberFormat(
+                        'en-US',
+                        {minimumFractionDigits: 0,
+                         maximumFractionDigits: 4}).format(value);
+                    break;
+                case 'price_per_share':
+                case 'lot_price':
+                    c.align = 'right'; // TODO: deprecated
+                    c.innerHTML = new Intl.NumberFormat(
+                        'en-US',
+                        {style: 'currency',
+                         currency: 'USD',
+                         minimumFractionDigits: 2,
+                         maximumFractionDigits: 4}).format(value);
+                    break;
+                case 'notes':
+                    c.innerHTML = '<i>' + sanitizeText('' + value) + '</i>';
+                    break;
+                default: c.innerHTML = sanitizeText(('' + value));
+                }
             }
         }
     }
