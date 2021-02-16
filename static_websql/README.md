@@ -8,7 +8,10 @@ version exists: https://github.com/sql-js/sql.js
 The various idosyncracies of SQLite are here:
 https://www.sqlite.org/lang.html
 
-See also: https://jsfiddle.net/Trae/76srLbwr/
+See also:
+  https://james-priest.github.io/100-days-of-code-log-r2/CH16-Offline1-WebSQL.html
+  https://jsfiddle.net/Trae/76srLbwr/
+  https://www.w3.org/TR/webdatabase/
 
 ## How to run
 
