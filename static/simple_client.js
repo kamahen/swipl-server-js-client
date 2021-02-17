@@ -13,16 +13,16 @@ async function handleSubmit(event) {
     event.preventDefault();
 
     let text = document.getElementById('query');
-    await fetchFromServer({query: text.value},
+    await fetchFromServer('/json', {query: text.value},
                           query_result => displayQueryResult(query_result));
 }
 
 // Send a request to the server and schedule a callback.
-async function fetchFromServer(request, callback) {
+async function fetchFromServer(path, request, callback) {
     // callback should take a single arg, the response from the server.
     try {
         const response = await fetch(
-            '/json',
+            path,
             {method: 'POST',
              headers: {'Content-Type': 'application/json'},
              body: JSON.stringify(request),

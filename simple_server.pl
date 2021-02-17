@@ -248,9 +248,3 @@ handle_error(GoalString, TrueFalseError, GoalStringAfterCall, VarsResult, Printe
     VarsResult = [],
     PrintedOutput = "",
     format(string(ErrorString), '~q', [Error]).
-
-
-
-
-
-

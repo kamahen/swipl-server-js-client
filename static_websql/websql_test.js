@@ -4,6 +4,8 @@
 
 const drop_tables = false;  // TODO: change this to false for production
 
+let whoami = null;  // For save/restore
+
 // Encapsulate the database.
 // Contains:
 //    db: the result from openDatabase(...)
@@ -195,9 +197,11 @@ class BuyLots {
 
 // Called by <body onload="renderPage();">
 async function renderPage() {
-    // TODO: create_tables within MyKabuDB.constructor()?
-    //       - didn't work when I tried it because of the
-    //         order things happened.
+    whoami = prompt("Your name", "");
+    console.log('WHOAMI:', whoami);
+    document.getElementById('buy_user').innerHTML =
+        'user ' + '<tt><u>' + sanitizeText(whoami || '') + '</u></tt>';
+    // TODO: fetch user data from server and use it to populate tables
     mykabu_db.create_tables();
     document.getElementById('buy_lot').addEventListener('submit', handleBuySubmit);
     show_buy_lots();
@@ -357,3 +361,27 @@ function sanitizeText(raw_str) {
         : raw_str;
 }
 
+
+// Send a request to the server and schedule a callback.
+async function fetchFromServer(path, request, callback) {
+    // callback should take a single arg, the response from the server.
+    try {
+        const response = await fetch(
+            path,
+            {method: 'POST',
+             headers: {'Content-Type': 'application/json'},
+             body: JSON.stringify(request),
+             mode: 'cors',                  // Don't need?
+             cache: 'no-cache',             // Don't need?
+             credentials: 'same-origin',    // Don't need?
+             redirect: 'follow',            // Don't need?
+             referrerPolicy: 'no-referrer', // Don't need?
+            });
+        callback(await response.json());
+    } catch(err) {
+        // TODO: the following doesn't capture enough information;
+        //       there is interesting information in the console log
+        //       such as error code 500 or ERR_CONNECTION_REFUSED
+        alert('***fetch ' + JSON.stringify(request) + ': ' + err);
+    }
+}
