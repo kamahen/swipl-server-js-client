@@ -22,6 +22,10 @@
 %    https://swi-prolog.discourse.group/t/yet-another-web-applications-tutorial/566
 %    https://www.swi-prolog.org/howto/http/
 
+% TODO: add a simple example of generating source with headers.
+%       and use reply_html_page/3
+%       See also: https://swi-prolog.discourse.group/t/additional-http-headers-with-reply-html-page-2-3/3624/3
+
 :- module(simple_server, [simple_server_main/0, simple_server_impl/0]).
 
 :- use_module(library(http/http_server), [http_server/1, http_redirect/3,

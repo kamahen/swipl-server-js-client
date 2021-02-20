@@ -95,8 +95,8 @@ class Journal {
         mykabu_db.transaction_executeSql(
             'CREATE TABLE IF NOT EXISTS journal (' +
                 'id        INTEGER PRIMARY KEY ASC AUTOINCREMENT, ' +
-                'timestamp DATETIME, ' +
-                'entry     TEXT' +
+                'timestamp DATETIME NOT NULL, ' +
+                'entry     TEXT NOT NULL' +
                 ')');
     }
 
@@ -120,8 +120,8 @@ class Tickers {
         mykabu_db.transaction_executeSql(
             'CREATE TABLE IF NOT EXISTS tickers (' +
                 'id     INTEGER PRIMARY KEY ASC AUTOINCREMENT, ' +
-                'ticker VARYING CHARACTER(40) UNIQUE, ' + // TODO: TEXT ?
-                'name   VARYING CHARACTER(255)' +
+                'ticker CHARACTER VARYING(40) UNIQUE NOT NULL, ' + // TODO: TEXT ?
+                'name   CHARACTER VARYING(255) NOT NULL' +
                 ')');
         // implied by UNIQUE in create table: CREATE UNIQUE INDEX index_tickers ON tickers(ticker)
         // In the following, we specify the ID, to ensure that
@@ -185,12 +185,12 @@ class BuyLots {
         mykabu_db.transaction_executeSql(
             'CREATE TABLE IF NOT EXISTS buy_lots (' +
                 'id              INTEGER PRIMARY KEY ASC AUTOINCREMENT, ' +
-                'ticker_id       INTEGER REFERENCES tickers(id), ' +
-                'timestamp       DATETIME, ' +
-                'shares          DECIMAL(16,4), ' +
-                'price_per_share DECIMAL(16,4), ' +
-                'notes           TEXT, ' +
-                'broker          VARYING CHARCTER(40)' + // TODO: make into a table, like tickers
+                'ticker_id       INTEGER REFERENCES tickers(id) NOT NULL, ' +
+                'timestamp       DATETIME NOT NULL, ' +
+                'shares          DECIMAL(16,4) NOT NULL, ' +
+                'price_per_share DECIMAL(16,4) NOT NULL, ' +
+                'notes           TEXT NOT NULL, ' +
+                'broker          CHARACTER VARYING(40) NOT NULL' + // TODO: make into a table, like tickers
                 ')');
     }
 }
