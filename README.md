@@ -72,6 +72,30 @@ halt.
 ```
 or ctrl-D (possibly ctrl-Z on Windows).
 
+Here's an example of a query and response, at the HTTP level, using `nc` as the client:
+```
+(echo 'POST /json HTTP/1.1';
+ echo 'Host: localhost:9999';
+ echo 'Content-Length: 18';
+ echo 'Content-Type: application/json'
+ echo 'Accept: */*'
+ echo 'Origin: http://localhost:9999';
+ echo ''
+ echo -n '{"query":"X = 1."}'
+) | nc -C -N localhost 9999
+
+```
+which output (from `nc`):
+```
+HTTP/1.1 200 OK
+Date: Wed, 20 Apr 2022 21:01:42 GMT
+Connection: Keep-Alive
+Content-Type: application/json
+Content-Length: 131
+
+{"error":"", "printed_output":"", "query":"X = 1.", "query_after_call":"1=1", "success":true, "vars": [ {"value":"1", "var":"X"} ]}
+```
+
 ## Code overview
 
 There are three client components and one server component:
