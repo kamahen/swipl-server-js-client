@@ -32,11 +32,17 @@ async function fetchFromServer(path, request, callback) {
              redirect: 'follow',            // Don't need?
              referrerPolicy: 'no-referrer', // Don't need?
             });
-        callback(await response.json());
+        if (response.ok) { // response.status in range 200-299
+            callback(await response.json());
+        } else {
+            console.error('Fetch response:', response, 'request:', request);
+            alert('*** fetch ' + JSON.stringify(request) + ': HTTP status: ' + response.status);
+        }
     } catch(err) {
         // TODO: the following doesn't capture enough information;
         //       there is interesting information in the console log
         //       such as error code 500 or ERR_CONNECTION_REFUSED
+        console.error('Fetch error:', err, 'request:', request);
         alert('***fetch ' + JSON.stringify(request) + ': ' + err);
     }
 }
