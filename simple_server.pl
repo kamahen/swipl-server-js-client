@@ -26,9 +26,10 @@
 %       and use reply_html_page/3
 %       See also: https://swi-prolog.discourse.group/t/additional-http-headers-with-reply-html-page-2-3/3624/3
 
-:- module(simple_server, [simple_server_main/0, simple_server_impl/0]).
+:- module(simple_server, [simple_server_main/0, simple_server_impl/1]).
 
 :- use_module(library(http/http_server), [http_server/1, http_redirect/3,
+                                          http_stop_server/2,
                                           http_read_json_dict/3, reply_json_dict/2]).
 :- use_module(library(http/http_path),   [http_absolute_location/3]).
 :- use_module(library(http/http_files),  [http_reply_from_files/3]).
@@ -42,7 +43,7 @@
 :- debug(log).    % enable log messages with debug(log, '...', [...]).
 :- debug(http(request)).
 :- debug(http(error)).
-% :- debug(redirect_log).
+:- debug(redirect_log).
 % :- debug(request_json_log).
 % :- debug(http(post_request))
 % :- debug(http_session).
@@ -82,7 +83,7 @@ http:location(json, root(json), []).
 %       which means not starting the REPL.
 % See also library(main):main/0
 %
-% Note: If you run simple_server_impl/0, it exits immediately.
+% Note: If you run simple_server_impl/1, it exits immediately.
 % Instead of running prolog/0, you can do something like
 % thread_get_message(x), which will wait forever, or you can do
 % thread_join('http@9999', _Status) -- this convention is not
@@ -90,13 +91,17 @@ http:location(json, root(json), []).
 % thread_httpd:current_server(Port, _Goal, Thread, _Queue, _Scheme, _StartTime).
 % See also: https://www.swi-prolog.org/pldoc/man?section=httpunixdaemon
 simple_server_main :-
-    simple_server_impl,
+    simple_server_impl(Opts),
+    debug(log, 'Options: ~w', [Opts]),
     debug(log, 'Starting REPL ...', []),
     prolog.  % REPL - terminated with exit.
+    % TODO: use at_halt/1 to schedule http_stop_server(Opts.port, [])
+    %       after a short time-out.
 
-%! simple_server_impl/0 is det.
+%! simple_server_impl(-Opts) is det.
 % Process the options, start the http server.
-simple_server_impl :-
+% Opts gets a dict of the options
+simple_server_impl(Opts) :-
     server_opts(Opts),
     % set_prolog_flag(verbose_file_search, true), % for debugging
     assert_server_locations(Opts),
