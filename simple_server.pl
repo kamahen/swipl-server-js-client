@@ -33,6 +33,7 @@
                                           http_read_json_dict/3, reply_json_dict/2]).
 :- use_module(library(http/http_path),   [http_absolute_location/3]).
 :- use_module(library(http/http_files),  [http_reply_from_files/3]).
+:- use_module(library(uri), [uri_components/2, uri_data/4, uri_edit/3]).
 
 :- use_module(library(debug)).
 :- use_module(library(optparse), [opt_arguments/3]).
@@ -92,7 +93,7 @@ http:location(json, root(json), []).
 % See also: https://www.swi-prolog.org/pldoc/man?section=httpunixdaemon
 simple_server_main :-
     simple_server_impl(Opts),
-    debug(log, 'Options: ~w', [Opts]),
+    debug(log, 'Options: ~q', [Opts]),
     debug(log, 'Starting REPL ...', []),
     prolog.  % REPL - terminated with exit.
     % TODO: use at_halt/1 to schedule http_stop_server(Opts.port, [])
@@ -148,29 +149,35 @@ assert_server_locations(Opts) :-
 % http://localhost:9999/ ... redirects to /static/simple_client.html
 %      - for debugging, 'moved' can be cleared by chrome://settings/clearBrowserData
 %        (Cached images and files)
-% You might want to also specify root('index.html').
+%
+% This simple situation can be handled by http_redirect/2, but
+% for debugging, it uses http_handler_/3.
 :- http_handler(root(.),
-                http_handler_redirect(
+                http_redirect_(
+                    moved, % or 'moved_temporary', for easier debugging
+                    static('simple_client.html')),
+                []).
+:- http_handler(root('index.html'),
+                http_redirect_(
                     moved, % or 'moved_temporary', for easier debugging
                     static('simple_client.html')),
                 []).
 
 % Serve localhost:9999/static/ from 'static' directory (See also facts for http:location/3)
-% For debugging, you might want cache(false).
 % See also https://swi-prolog.discourse.group/t/how-to-debug-if-modified-since-with-http-reply-from-files/1892/3
 :- http_handler(static(.),
-                http_reply_from_files(static_dir(.), [cache(true)]),
+                http_reply_from_files(static_dir(.),
+                                      % disable cache for debugging
+                                      [cache(false)]),
                 [prefix]).
 
 :- http_handler(root(json),     % localhost:9999/json
                 reply_with_json, [priority(0)]).
 
-%! http_handler_redirect(+How:atom, +To, +Request) is det.
-% Called by http_handler for a redirect.
-%    How is moved_temporary or moved
-%    To is a file path
-%    Request is the incoming HTTP request
-http_handler_redirect(How, To, Request) :-
+%! http_redirect_(+How:atom, +To, +Request) is det.
+% This is used to output some debug information before
+% calling http_redirect/3.
+http_redirect_(How, To, Request) :-
     memberchk(path(Base), Request),
     memberchk(request_uri(RequestURI), Request),
     http_absolute_location(To, ToURL, [relative_to(Base)]),
@@ -192,7 +199,7 @@ reply_with_json(Request) :-
     ),
     http_read_json_dict(Request, JsonIn, % [content_type("application/json")]),
                         [value_string_as(atom), end_of_file(@(end)), default_tag(json),
-                         true(#(true)),false(#(false)),null(#(null))]),
+                         true(#(true)), false(#(false)), null(#(null))]),
     debug(request_json_log, 'Request(json): ~q', [JsonIn]),
     (   json_response(JsonIn, JsonOut)
     ->  true
