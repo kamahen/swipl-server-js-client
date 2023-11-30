@@ -85,7 +85,7 @@ Here's an example of a query and response, at the HTTP level, using `nc` as the 
 ) | nc -C -N localhost 9999
 
 ```
-which output (from `nc`):
+which produces this output (from `nc`):
 ```
 HTTP/1.1 200 OK
 Date: Wed, 20 Apr 2022 21:01:42 GMT
